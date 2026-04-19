@@ -15,3 +15,6 @@ Package.resolved
 
 # v0-mac
 .v0-mac/screenshots/
+
+# xcodegen — generated project (keep project.yml in repo)
+MoodyClone.xcodeproj/

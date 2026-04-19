@@ -1,0 +1,21 @@
+{
+  "project": "MoodyClone",
+  "type": "macos-swiftui",
+  "started_at": "2026-04-19T17:45:00Z",
+  "current_phase": 1,
+  "current_phase_step": "writing project.yml and Swift stubs",
+  "iteration": 1,
+  "last_clean_commit": "8ed6965",
+  "phases": {
+    "1_scaffold": { "status": "in_progress" },
+    "2_implement": { "status": "pending", "features_done": 0, "features_total": 11 },
+    "3_build_launch": { "status": "pending", "last_error": null },
+    "4_visual_qa": { "status": "pending", "passes": [], "issues_found": 0, "issues_fixed": 0 },
+    "5_polish": { "status": "pending" },
+    "6_verify": { "status": "pending" }
+  },
+  "decisions_made": [],
+  "regressions_caught": [],
+  "deferred_to_v1": [],
+  "blocked": []
+}

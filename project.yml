@@ -1,0 +1,36 @@
+name: MoodyClone
+options:
+  bundleIdPrefix: com.san
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: ""
+    CODE_SIGN_STYLE: Automatic
+    CODE_SIGN_IDENTITY: "-"
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+    ENABLE_HARDENED_RUNTIME: YES
+    MACOSX_DEPLOYMENT_TARGET: "14.0"
+    GENERATE_INFOPLIST_FILE: YES
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+
+targets:
+  MoodyClone:
+    type: application
+    platform: macOS
+    sources:
+      - path: MoodyClone
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.san.MoodyClone
+        CODE_SIGN_ENTITLEMENTS: MoodyClone/MoodyClone.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: MoodyClone
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Made by santiagoalonso.com"
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "MoodyClone listens to your voice to auto-scroll the teleprompter."
+        INFOPLIST_KEY_LSMinimumSystemVersion: "14.0"
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
