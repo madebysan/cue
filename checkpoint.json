@@ -2,19 +2,26 @@
   "project": "MoodyClone",
   "type": "macos-swiftui",
   "started_at": "2026-04-19T17:45:00Z",
-  "current_phase": 1,
-  "current_phase_step": "writing project.yml and Swift stubs",
+  "completed_at": "2026-04-19T18:18:00Z",
+  "current_phase": 6,
+  "current_phase_step": "complete",
   "iteration": 1,
-  "last_clean_commit": "8ed6965",
+  "last_clean_commit": "4d55e8b",
   "phases": {
-    "1_scaffold": { "status": "in_progress" },
-    "2_implement": { "status": "pending", "features_done": 0, "features_total": 11 },
-    "3_build_launch": { "status": "pending", "last_error": null },
-    "4_visual_qa": { "status": "pending", "passes": [], "issues_found": 0, "issues_fixed": 0 },
-    "5_polish": { "status": "pending" },
-    "6_verify": { "status": "pending" }
+    "1_scaffold": { "status": "completed" },
+    "2_implement": { "status": "completed", "features_done": 11, "features_total": 11 },
+    "3_build_launch": { "status": "completed", "last_error": null },
+    "4_visual_qa": { "status": "completed", "passes": [{ "pass": 1, "issues_found": 0, "issues_fixed": 0, "deferred": 0 }], "exit_reason": "all_resolved" },
+    "5_polish": { "status": "completed" },
+    "6_verify": { "status": "completed" }
   },
-  "decisions_made": [],
+  "decisions_made": [
+    "Dropped Models/ScrollState.swift enum in favor of three @State vars (simpler)",
+    "Used Timer.scheduledTimer instead of deprecated CVDisplayLink",
+    "AVAudioEngine RMS threshold for voice detection (Option B, not SFSpeechRecognizer)",
+    "Added --qa-visible launch flag so visual QA can screencapture the otherwise-invisible panel",
+    "Used GENERATE_INFOPLIST_FILE + INFOPLIST_KEY_* instead of hand-written Info.plist"
+  ],
   "regressions_caught": [],
   "deferred_to_v1": [],
   "blocked": []
