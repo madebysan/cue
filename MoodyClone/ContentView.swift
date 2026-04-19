@@ -40,6 +40,15 @@ struct ContentView: View {
                             .font(.caption2.monospacedDigit())
                             .foregroundStyle(.tertiary)
                     }
+                    // Diagnostic row — shows exactly why the mic may or may not be registering.
+                    HStack(spacing: 12) {
+                        Text(mic.lastStatusMessage)
+                        Spacer()
+                        Text("taps: \(mic.tapCallCount)")
+                        Text(String(format: "raw: %.4f", mic.lastRawRMS))
+                    }
+                    .font(.caption2.monospacedDigit())
+                    .foregroundStyle(.quaternary)
                 }
                 .padding(.horizontal, 12)
                 .padding(.top, 4)
