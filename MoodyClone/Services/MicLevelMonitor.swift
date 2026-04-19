@@ -2,7 +2,7 @@ import AVFoundation
 import Combine
 import Foundation
 
-final class MicLevelMonitor: ObservableObject {
+final class MicLevelMonitor: NSObject, ObservableObject, AVCaptureAudioDataOutputSampleBufferDelegate {
     @Published var level: Float = 0
     @Published var isRunning: Bool = false
     @Published var permissionDenied: Bool = false
@@ -18,6 +18,13 @@ final class MicLevelMonitor: ObservableObject {
     // reusing the same instance crashes on the second start().
     private var engine = AVAudioEngine()
     private var isStarting: Bool = false
+
+    // Secondary capture path — AVCaptureSession is CoreMedia-based and uses a
+    // different plumbing than AVAudioEngine. Running both in parallel during
+    // debug so whichever one actually pumps samples drives the UI.
+    private var captureSession: AVCaptureSession?
+    private let captureQueue = DispatchQueue(label: "moody-clone.capture", qos: .userInitiated)
+    @Published var captureCallCount: Int = 0
 
     func start() {
         guard !isRunning else {
@@ -68,6 +75,7 @@ final class MicLevelMonitor: ObservableObject {
     }
 
     private func startEngine() {
+        startCaptureSession()  // parallel AVCaptureSession path for diagnostics
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         sampleRate = format.sampleRate
@@ -132,10 +140,81 @@ final class MicLevelMonitor: ObservableObject {
         guard isRunning else { return }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
+        captureSession?.stopRunning()
+        captureSession = nil
         isRunning = false
         level = 0
         lastStatusMessage = "stopped"
-        Logger.shared.log("MicLevelMonitor.stop — engine stopped, tap removed")
+        Logger.shared.log("MicLevelMonitor.stop — engine stopped, tap removed, captureSession stopped")
+    }
+
+    private func startCaptureSession() {
+        guard let device = AVCaptureDevice.default(for: .audio) else {
+            Logger.shared.log("AVCaptureDevice.default(.audio) returned nil")
+            return
+        }
+        Logger.shared.log("AVCaptureDevice: \(device.localizedName) (\(device.uniqueID))")
+
+        let session = AVCaptureSession()
+        do {
+            let input = try AVCaptureDeviceInput(device: device)
+            if session.canAddInput(input) {
+                session.addInput(input)
+            } else {
+                Logger.shared.log("captureSession cannot add input")
+                return
+            }
+            let output = AVCaptureAudioDataOutput()
+            output.setSampleBufferDelegate(self, queue: captureQueue)
+            if session.canAddOutput(output) {
+                session.addOutput(output)
+            } else {
+                Logger.shared.log("captureSession cannot add output")
+                return
+            }
+            session.startRunning()
+            captureSession = session
+            Logger.shared.log("AVCaptureSession started")
+        } catch {
+            Logger.shared.log("AVCaptureSession setup failed: \(error)")
+        }
+    }
+
+    // AVCaptureAudioDataOutputSampleBufferDelegate
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        let count: Int = {
+            var c = 0
+            DispatchQueue.main.sync {
+                self.captureCallCount += 1
+                c = self.captureCallCount
+            }
+            return c
+        }()
+        if count == 1 || count % 60 == 0 {
+            Logger.shared.log("AVCapture sample #\(count) — numSamples=\(CMSampleBufferGetNumSamples(sampleBuffer))")
+        }
+        // Extract RMS from sample buffer for the level meter.
+        guard let blockBuffer = CMSampleBufferGetDataBuffer(sampleBuffer) else { return }
+        var lengthAtOffset = 0
+        var totalLength = 0
+        var dataPointer: UnsafeMutablePointer<CChar>? = nil
+        CMBlockBufferGetDataPointer(blockBuffer, atOffset: 0, lengthAtOffsetOut: &lengthAtOffset, totalLengthOut: &totalLength, dataPointerOut: &dataPointer)
+        guard let ptr = dataPointer, totalLength > 0 else { return }
+
+        // Assume Float32 mono (AVCaptureAudioDataOutput default on macOS).
+        let floatCount = totalLength / MemoryLayout<Float>.size
+        let floatPtr = ptr.withMemoryRebound(to: Float.self, capacity: floatCount) { $0 }
+        var sum: Float = 0
+        for i in 0..<floatCount {
+            let sample = floatPtr[i]
+            sum += sample * sample
+        }
+        let raw = sqrt(sum / Float(floatCount))
+        let scaled = min(1.0, max(0.0, raw * 15))
+        DispatchQueue.main.async {
+            self.lastRawRMS = raw
+            self.level = scaled
+        }
     }
 
     private static func rms(buffer: AVAudioPCMBuffer) -> Float {

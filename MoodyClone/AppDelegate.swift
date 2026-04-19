@@ -16,9 +16,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Logger.shared.log("bundle: \(Bundle.main.bundleIdentifier ?? "?"), executable: \(Bundle.main.executablePath ?? "?")")
         Logger.shared.log("home: \(FileManager.default.homeDirectoryForCurrentUser.path)")
 
+        // Activate the app so CoreAudio/TCC routes mic input to us.
+        // macOS 26 doesn't reliably hand mic audio to non-activating panels.
+        NSApp.setActivationPolicy(.regular)
+        NSApp.activate(ignoringOtherApps: true)
+
         let panel = NSPanel(
             contentRect: NSRect(x: 200, y: 200, width: 520, height: 320),
-            styleMask: [.titled, .closable, .resizable, .fullSizeContentView, .nonactivatingPanel],
+            styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
         )
