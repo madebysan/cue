@@ -9,6 +9,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // key events to SwiftUI's .onKeyPress, so we use a local NSEvent monitor.
     static var onSpacePressed: () -> Void = {}
     static var onEscapePressed: () -> Void = {}
+    static var onArrowUp: () -> Void = {}
+    static var onArrowDown: () -> Void = {}
     static var isEditorFocused: () -> Bool = { false }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -44,21 +46,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Install a local key monitor so spacebar / escape work even when
         // the NSPanel doesn't activate the app.
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            // 49 = space, 53 = escape
-            if event.keyCode == 49 {
-                if AppDelegate.isEditorFocused() {
-                    return event  // let the text editor receive spaces
-                }
-                Logger.shared.log("space key captured by monitor")
+            // Key codes: 49=space, 53=escape, 125=down arrow, 126=up arrow
+            let editorFocused = AppDelegate.isEditorFocused()
+
+            switch event.keyCode {
+            case 49:
+                if editorFocused { return event }
                 AppDelegate.onSpacePressed()
                 return nil
-            }
-            if event.keyCode == 53 {
-                Logger.shared.log("escape key captured by monitor")
+            case 53:
                 AppDelegate.onEscapePressed()
                 return nil
+            case 126: // up arrow
+                if editorFocused { return event }
+                AppDelegate.onArrowUp()
+                return nil
+            case 125: // down arrow
+                if editorFocused { return event }
+                AppDelegate.onArrowDown()
+                return nil
+            default:
+                return event
             }
-            return event
         }
         Logger.shared.log("key monitor installed")
     }

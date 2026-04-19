@@ -32,5 +32,6 @@ targets:
         INFOPLIST_KEY_CFBundleDisplayName: MoodyClone
         INFOPLIST_KEY_NSHumanReadableCopyright: "Made by santiagoalonso.com"
         INFOPLIST_KEY_NSMicrophoneUsageDescription: "MoodyClone listens to your voice to auto-scroll the teleprompter."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "MoodyClone transcribes what you read so it can scroll the teleprompter to your exact position in the script."
         INFOPLIST_KEY_LSMinimumSystemVersion: "14.0"
         INFOPLIST_KEY_NSPrincipalClass: NSApplication
