@@ -2,7 +2,7 @@ import AVFoundation
 import Combine
 import Foundation
 
-final class MicLevelMonitor: ObservableObject {
+final class MicLevelMonitor: NSObject, ObservableObject, AVCaptureAudioDataOutputSampleBufferDelegate {
     @Published var level: Float = 0
     @Published var isRunning: Bool = false
     @Published var permissionDenied: Bool = false
@@ -20,6 +20,12 @@ final class MicLevelMonitor: ObservableObject {
 
     private var engine = AVAudioEngine()
     private var isStarting: Bool = false
+
+    // AVCaptureSession is what actually wakes the mic hardware on macOS 26.
+    // Without it, AVAudioEngine's input tap silently never fires.
+    // We use it as the "activator" (its audio output also drives RMS + speech).
+    private var captureSession: AVCaptureSession?
+    private let captureQueue = DispatchQueue(label: "moody-clone.capture", qos: .userInitiated)
 
     func start() {
         guard !isRunning else {
@@ -66,6 +72,11 @@ final class MicLevelMonitor: ObservableObject {
     }
 
     private func startEngine() {
+        // Activate the mic hardware via AVCaptureSession first. On macOS 26
+        // AVAudioEngine's input tap won't fire unless something else has opened
+        // the capture device.
+        startCaptureSession()
+
         let input = engine.inputNode
         let format = input.outputFormat(forBus: 0)
         sampleRate = format.sampleRate
@@ -128,10 +139,40 @@ final class MicLevelMonitor: ObservableObject {
         guard isRunning else { return }
         engine.inputNode.removeTap(onBus: 0)
         engine.stop()
+        captureSession?.stopRunning()
+        captureSession = nil
         isRunning = false
         level = 0
         lastStatusMessage = "stopped"
-        Logger.shared.log("MicLevelMonitor.stop — engine stopped")
+        Logger.shared.log("MicLevelMonitor.stop — engine stopped, capture stopped")
+    }
+
+    private func startCaptureSession() {
+        guard let device = AVCaptureDevice.default(for: .audio) else {
+            Logger.shared.log("AVCaptureDevice.default(.audio) returned nil")
+            return
+        }
+        Logger.shared.log("AVCaptureDevice: \(device.localizedName)")
+
+        let session = AVCaptureSession()
+        do {
+            let input = try AVCaptureDeviceInput(device: device)
+            if session.canAddInput(input) { session.addInput(input) }
+            let output = AVCaptureAudioDataOutput()
+            output.setSampleBufferDelegate(self, queue: captureQueue)
+            if session.canAddOutput(output) { session.addOutput(output) }
+            session.startRunning()
+            captureSession = session
+            Logger.shared.log("AVCaptureSession started (mic activator)")
+        } catch {
+            Logger.shared.log("AVCaptureSession setup failed: \(error)")
+        }
+    }
+
+    // AVCaptureAudioDataOutputSampleBufferDelegate — just keeps the capture session
+    // alive so AVAudioEngine's tap will fire. Samples here are discarded.
+    func captureOutput(_ output: AVCaptureOutput, didOutput sampleBuffer: CMSampleBuffer, from connection: AVCaptureConnection) {
+        // intentionally empty — we only need the session running
     }
 
     private static func rms(buffer: AVAudioPCMBuffer) -> Float {
