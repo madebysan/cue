@@ -69,42 +69,57 @@ final class MicLevelMonitor: ObservableObject {
 
     private func startEngine() {
         let input = engine.inputNode
-        engine.prepare()
-
         let format = input.outputFormat(forBus: 0)
         sampleRate = format.sampleRate
         channelCount = Int(format.channelCount)
 
-        Logger.shared.log("engine.prepare done — input format: \(Int(format.sampleRate))Hz / \(format.channelCount)ch, commonFormat=\(format.commonFormat.rawValue) (1=float32, 2=float64, 3=int16, 4=int32)")
+        Logger.shared.log("input format: \(Int(format.sampleRate))Hz / \(format.channelCount)ch, commonFormat=\(format.commonFormat.rawValue) (1=float32, 2=float64, 3=int16, 4=int32)")
 
         guard format.sampleRate > 0, format.channelCount > 0 else {
             lastStatusMessage = "invalid input format (\(Int(format.sampleRate))Hz / \(format.channelCount)ch)"
             Logger.shared.log("ABORT: invalid input format — no tap installed")
+            isStarting = false
             return
         }
+
+        // Connect input → mainMixer → (implicit output). On macOS the inputNode
+        // doesn't pump audio unless it's connected somewhere. Muting the mixer
+        // avoids speaker feedback.
+        let mixer = engine.mainMixerNode
+        mixer.outputVolume = 0
+        engine.connect(input, to: mixer, format: format)
+        Logger.shared.log("connected input → mainMixer (muted)")
 
         input.removeTap(onBus: 0)
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             let raw = Self.rms(buffer: buffer)
             let scaled = min(1.0, max(0.0, raw * 15))
+            // Log the very first tap firing directly from the audio thread so we
+            // confirm callbacks are running at all.
+            if let self, self.tapCallCount == 0 {
+                Logger.shared.log("FIRST TAP FIRED — frameLength=\(buffer.frameLength), raw=\(String(format: "%.5f", raw))")
+            }
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.tapCallCount += 1
                 self.lastRawRMS = raw
                 self.level = scaled
-                // Log every 60th tap (~1/sec at 60fps) so the file doesn't explode.
                 if self.tapCallCount % 60 == 0 {
-                    Logger.shared.log("tap #\(self.tapCallCount) — raw RMS=\(String(format: "%.5f", raw)), scaled=\(String(format: "%.3f", scaled))")
+                    Logger.shared.log("tap #\(self.tapCallCount) — raw=\(String(format: "%.5f", raw)), scaled=\(String(format: "%.3f", scaled))")
                 }
             }
         }
+        Logger.shared.log("tap installed on bus 0")
+
+        engine.prepare()
+        Logger.shared.log("engine.prepare complete")
 
         do {
             try engine.start()
             isRunning = true
             isStarting = false
             lastStatusMessage = "running @ \(Int(format.sampleRate))Hz / \(format.channelCount)ch"
-            Logger.shared.log("engine.start SUCCESS — tap installed on bus 0")
+            Logger.shared.log("engine.start SUCCESS")
         } catch {
             lastStatusMessage = "engine.start failed: \(error.localizedDescription)"
             isRunning = false

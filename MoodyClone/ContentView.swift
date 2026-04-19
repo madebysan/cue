@@ -72,17 +72,17 @@ struct ContentView: View {
         .onChange(of: mic.level) { _, level in
             handleVoiceLevel(level)
         }
-        .onKeyPress(.space) {
-            guard !editorFocused else { return .ignored }
-            toggleScroll()
-            return .handled
-        }
-        .onKeyPress(.escape) {
-            if scroll.isScrolling || countdown != nil || voiceRunActive {
-                pauseEverything()
-                return .handled
+        .onAppear {
+            AppDelegate.onSpacePressed = { toggleScroll() }
+            AppDelegate.onEscapePressed = {
+                if scroll.isScrolling || countdown != nil || voiceRunActive {
+                    pauseEverything()
+                }
             }
-            return .ignored
+            AppDelegate.isEditorFocused = { editorFocused }
+        }
+        .onChange(of: editorFocused) { _, focused in
+            AppDelegate.isEditorFocused = { focused }
         }
     }
 
