@@ -4,7 +4,7 @@ struct ContentView: View {
     @AppStorage("defaultSpeed") private var speed: Double = 80
     @AppStorage("defaultTextSize") private var textSize: Double = 24
     @AppStorage("defaultVoiceMode") private var voiceMode: Bool = false
-    @AppStorage("voiceSensitivity") private var sensitivity: Double = 0.15
+    @AppStorage("voiceSensitivity") private var sensitivity: Double = 0.08
 
     @State private var script: String = """
     Paste your script here.
@@ -25,11 +25,22 @@ struct ContentView: View {
         VStack(spacing: 0) {
             controlBar
             if voiceMode {
-                VolumeMeterView(
-                    level: mic.level,
-                    threshold: Float(sensitivity),
-                    active: voiceRunActive || scroll.isScrolling
-                )
+                VStack(spacing: 4) {
+                    VolumeMeterView(
+                        level: mic.level,
+                        threshold: Float(sensitivity),
+                        active: voiceRunActive || scroll.isScrolling
+                    )
+                    HStack {
+                        Text(String(format: "level %.2f", mic.level))
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                        Spacer()
+                        Text(String(format: "threshold %.2f", sensitivity))
+                            .font(.caption2.monospacedDigit())
+                            .foregroundStyle(.tertiary)
+                    }
+                }
                 .padding(.horizontal, 12)
                 .padding(.top, 4)
                 .padding(.bottom, 8)
@@ -197,16 +208,16 @@ struct ContentView: View {
                 tickCountdown()
             } else {
                 withAnimation(.easeInOut(duration: 0.25)) { countdown = nil }
-                if voiceMode {
-                    voiceRunActive = true
-                } else {
-                    scroll.start()
-                }
+                // Always start scroll; voice mode modulates pause-on-silence below.
+                scroll.start()
+                if voiceMode { voiceRunActive = true }
             }
         }
     }
 
     private func handleVoiceLevel(_ level: Float) {
+        // Voice-gated modulation: while voiceRunActive, pause when silent, resume when loud.
+        // Play is what starts the scroll; voice just gates whether the timer ticks advance.
         guard voiceMode, voiceRunActive else { return }
         let above = level > Float(sensitivity)
         if above && !scroll.isScrolling {

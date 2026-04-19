@@ -71,7 +71,8 @@ final class MicLevelMonitor: ObservableObject {
             sum += sample * sample
         }
         let rms = sqrt(sum / Float(frameLength))
-        // Scale to roughly 0..1 for a quiet-to-loud talking voice
-        return min(1.0, max(0.0, rms * 8))
+        // Scale to roughly 0..1 for a quiet-to-loud talking voice.
+        // 15x gain makes typical indoor speech register around 0.15–0.5.
+        return min(1.0, max(0.0, rms * 15))
     }
 }
