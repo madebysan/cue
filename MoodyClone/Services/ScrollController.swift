@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 
-@MainActor
 final class ScrollController: ObservableObject {
     @Published private(set) var offset: CGFloat = 0
     @Published private(set) var isScrolling: Bool = false
@@ -15,12 +14,12 @@ final class ScrollController: ObservableObject {
         guard !isScrolling else { return }
         isScrolling = true
         lastTick = Date()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+        let t = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            self?.tick()
         }
-        if let timer {
-            RunLoop.main.add(timer, forMode: .common)
-        }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
+        Logger.shared.log("ScrollController.start (speed=\(speed))")
     }
 
     func stop() {
@@ -29,11 +28,13 @@ final class ScrollController: ObservableObject {
         timer?.invalidate()
         timer = nil
         lastTick = nil
+        Logger.shared.log("ScrollController.stop (offset=\(Int(offset)))")
     }
 
     func reset() {
         stop()
         offset = 0
+        Logger.shared.log("ScrollController.reset")
     }
 
     private func tick() {

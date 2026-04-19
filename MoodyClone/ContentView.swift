@@ -61,8 +61,9 @@ struct ContentView: View {
         .onAppear { scroll.speed = speed }
         .onChange(of: speed) { _, new in scroll.speed = new }
         .onChange(of: voiceMode) { _, on in
+            Logger.shared.log("voiceMode changed to \(on)")
             if on {
-                Task { await mic.start() }
+                mic.start()
             } else {
                 mic.stop()
                 voiceRunActive = false
@@ -186,6 +187,7 @@ struct ContentView: View {
     // MARK: - Actions
 
     private func toggleScroll() {
+        Logger.shared.log("toggleScroll pressed — voiceMode=\(voiceMode), isScrolling=\(scroll.isScrolling), voiceRunActive=\(voiceRunActive), countdown=\(countdown.map(String.init) ?? "nil"), editorFocused=\(editorFocused)")
         if countdown != nil {
             withAnimation(.easeInOut(duration: 0.25)) { countdown = nil }
             return

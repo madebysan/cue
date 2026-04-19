@@ -2,7 +2,6 @@ import AVFoundation
 import Combine
 import Foundation
 
-@MainActor
 final class MicLevelMonitor: ObservableObject {
     @Published var level: Float = 0
     @Published var isRunning: Bool = false
@@ -17,39 +16,56 @@ final class MicLevelMonitor: ObservableObject {
 
     private let engine = AVAudioEngine()
 
-    func start() async {
-        guard !isRunning else { return }
-
-        let status = AVCaptureDevice.authorizationStatus(for: .audio)
-        let granted: Bool
-        switch status {
-        case .authorized:
-            granted = true
-        case .notDetermined:
-            granted = await AVCaptureDevice.requestAccess(for: .audio)
-        case .denied, .restricted:
-            granted = false
-        @unknown default:
-            granted = false
-        }
-
-        guard granted else {
-            permissionDenied = true
-            lastStatusMessage = "permission denied"
+    func start() {
+        guard !isRunning else {
+            Logger.shared.log("MicLevelMonitor.start called but already running")
             return
         }
-        permissionDenied = false
 
+        let status = AVCaptureDevice.authorizationStatus(for: .audio)
+        Logger.shared.log("MicLevelMonitor.start — auth status=\(status.rawValue) (0=notDetermined, 1=restricted, 2=denied, 3=authorized)")
+
+        switch status {
+        case .authorized:
+            startEngine()
+        case .notDetermined:
+            Logger.shared.log("requesting mic permission…")
+            AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+                DispatchQueue.main.async {
+                    guard let self else { return }
+                    Logger.shared.log("mic permission response: granted=\(granted)")
+                    if granted {
+                        self.permissionDenied = false
+                        self.startEngine()
+                    } else {
+                        self.permissionDenied = true
+                        self.lastStatusMessage = "permission denied"
+                    }
+                }
+            }
+        case .denied, .restricted:
+            permissionDenied = true
+            lastStatusMessage = "permission denied — enable in System Settings → Privacy & Security → Microphone"
+            Logger.shared.log("mic permission previously denied/restricted — cannot start")
+        @unknown default:
+            lastStatusMessage = "unknown permission status"
+            Logger.shared.log("unknown mic permission status")
+        }
+    }
+
+    private func startEngine() {
         let input = engine.inputNode
-        // prepare() ensures the engine is configured before we read the format.
         engine.prepare()
 
         let format = input.outputFormat(forBus: 0)
         sampleRate = format.sampleRate
         channelCount = Int(format.channelCount)
 
+        Logger.shared.log("engine.prepare done — input format: \(Int(format.sampleRate))Hz / \(format.channelCount)ch, commonFormat=\(format.commonFormat.rawValue) (1=float32, 2=float64, 3=int16, 4=int32)")
+
         guard format.sampleRate > 0, format.channelCount > 0 else {
             lastStatusMessage = "invalid input format (\(Int(format.sampleRate))Hz / \(format.channelCount)ch)"
+            Logger.shared.log("ABORT: invalid input format — no tap installed")
             return
         }
 
@@ -57,11 +73,15 @@ final class MicLevelMonitor: ObservableObject {
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             let raw = Self.rms(buffer: buffer)
             let scaled = min(1.0, max(0.0, raw * 15))
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 guard let self else { return }
                 self.tapCallCount += 1
                 self.lastRawRMS = raw
                 self.level = scaled
+                // Log every 60th tap (~1/sec at 60fps) so the file doesn't explode.
+                if self.tapCallCount % 60 == 0 {
+                    Logger.shared.log("tap #\(self.tapCallCount) — raw RMS=\(String(format: "%.5f", raw)), scaled=\(String(format: "%.3f", scaled))")
+                }
             }
         }
 
@@ -69,9 +89,11 @@ final class MicLevelMonitor: ObservableObject {
             try engine.start()
             isRunning = true
             lastStatusMessage = "running @ \(Int(format.sampleRate))Hz / \(format.channelCount)ch"
+            Logger.shared.log("engine.start SUCCESS — tap installed on bus 0")
         } catch {
             lastStatusMessage = "engine.start failed: \(error.localizedDescription)"
             isRunning = false
+            Logger.shared.log("engine.start FAILED: \(error)")
         }
     }
 
@@ -82,10 +104,10 @@ final class MicLevelMonitor: ObservableObject {
         isRunning = false
         level = 0
         lastStatusMessage = "stopped"
+        Logger.shared.log("MicLevelMonitor.stop — engine stopped, tap removed")
     }
 
     private static func rms(buffer: AVAudioPCMBuffer) -> Float {
-        // Prefer Float32 path (the typical inputNode format).
         if let channelData = buffer.floatChannelData {
             let channel = channelData.pointee
             let frameLength = Int(buffer.frameLength)
@@ -97,7 +119,6 @@ final class MicLevelMonitor: ObservableObject {
             }
             return sqrt(sum / Float(frameLength))
         }
-        // Fallback for Int16 buffers (some external USB mics).
         if let int16Data = buffer.int16ChannelData {
             let channel = int16Data.pointee
             let frameLength = Int(buffer.frameLength)

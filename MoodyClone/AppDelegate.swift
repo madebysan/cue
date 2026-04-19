@@ -5,6 +5,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     var panel: NSPanel?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        Logger.shared.log("applicationDidFinishLaunching")
+        Logger.shared.log("bundle: \(Bundle.main.bundleIdentifier ?? "?"), executable: \(Bundle.main.executablePath ?? "?")")
+        Logger.shared.log("home: \(FileManager.default.homeDirectoryForCurrentUser.path)")
         let panel = NSPanel(
             contentRect: NSRect(x: 200, y: 200, width: 520, height: 320),
             styleMask: [.titled, .closable, .resizable, .fullSizeContentView, .nonactivatingPanel],
