@@ -72,6 +72,13 @@ struct ContentView: View {
             AppDelegate.onArrowUp = { manualScroll(by: -80) }
             AppDelegate.onArrowDown = { manualScroll(by: 80) }
             AppDelegate.isEditorFocused = { editorFocused }
+
+            // If voiceMode was on from a prior session, actually start the mic now.
+            // @AppStorage remembers the toggle state but .onChange only fires on change.
+            if voiceMode {
+                Logger.shared.log("voiceMode=true at launch — starting mic")
+                speech.requestAuthorization { _ in mic.start() }
+            }
         }
         .onChange(of: editorFocused) { _, f in
             AppDelegate.isEditorFocused = { f }
@@ -79,16 +86,16 @@ struct ContentView: View {
         .onChange(of: voiceMode) { _, on in
             Logger.shared.log("voiceMode changed to \(on)")
             if on {
-                // Request speech permission + start mic.
-                speech.requestAuthorization { granted in
-                    if granted {
-                        mic.start()
-                    } else {
-                        Logger.shared.log("speech auth NOT granted — staying in mic-only mode")
-                        mic.start()  // at least get the volume meter
+                speech.requestAuthorization { _ in
+                    mic.start()
+                    // If the user was already playing when they toggled mic off, restart speech now.
+                    if isRunning {
+                        Logger.shared.log("restarting speech after mic re-enable (was isRunning)")
+                        speech.start()
                     }
                 }
             } else {
+                // Turning mic off stops everything — there's nothing for play to do without audio.
                 speech.stop()
                 mic.stop()
                 stopRunning()
@@ -194,7 +201,7 @@ struct ContentView: View {
     // MARK: - Actions
 
     private func togglePlay() {
-        Logger.shared.log("togglePlay — voiceMode=\(voiceMode) isRunning=\(isRunning) countdown=\(countdown.map(String.init) ?? "nil") editorFocused=\(editorFocused)")
+        Logger.shared.log("togglePlay — voiceMode=\(voiceMode) isRunning=\(isRunning) micRunning=\(mic.isRunning) countdown=\(countdown.map(String.init) ?? "nil") editorFocused=\(editorFocused)")
         if countdown != nil {
             withAnimation(.easeInOut(duration: 0.2)) { countdown = nil }
             return
@@ -202,6 +209,11 @@ struct ContentView: View {
         if isRunning {
             stopRunning()
             return
+        }
+        // If voice mode is on but mic isn't running yet (e.g. first launch), start it now.
+        if voiceMode && !mic.isRunning {
+            Logger.shared.log("play pressed but mic not running — starting mic first")
+            speech.requestAuthorization { _ in mic.start() }
         }
         startWithCountdown()
     }
