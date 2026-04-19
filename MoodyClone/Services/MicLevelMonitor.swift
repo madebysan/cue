@@ -14,13 +14,24 @@ final class MicLevelMonitor: ObservableObject {
     @Published var lastRawRMS: Float = 0
     @Published var lastStatusMessage: String = "not started"
 
-    private let engine = AVAudioEngine()
+    // Recreated on every start(). AVAudioEngine is unstable across stop/start on macOS —
+    // reusing the same instance crashes on the second start().
+    private var engine = AVAudioEngine()
+    private var isStarting: Bool = false
 
     func start() {
         guard !isRunning else {
             Logger.shared.log("MicLevelMonitor.start called but already running")
             return
         }
+        guard !isStarting else {
+            Logger.shared.log("MicLevelMonitor.start called while a start is already in flight — ignoring")
+            return
+        }
+        isStarting = true
+
+        // Fresh engine every start — AVAudioEngine is unstable across stop/start on macOS.
+        engine = AVAudioEngine()
 
         let status = AVCaptureDevice.authorizationStatus(for: .audio)
         Logger.shared.log("MicLevelMonitor.start — auth status=\(status.rawValue) (0=notDetermined, 1=restricted, 2=denied, 3=authorized)")
@@ -40,6 +51,7 @@ final class MicLevelMonitor: ObservableObject {
                     } else {
                         self.permissionDenied = true
                         self.lastStatusMessage = "permission denied"
+                        self.isStarting = false
                     }
                 }
             }
@@ -47,9 +59,11 @@ final class MicLevelMonitor: ObservableObject {
             permissionDenied = true
             lastStatusMessage = "permission denied — enable in System Settings → Privacy & Security → Microphone"
             Logger.shared.log("mic permission previously denied/restricted — cannot start")
+            isStarting = false
         @unknown default:
             lastStatusMessage = "unknown permission status"
             Logger.shared.log("unknown mic permission status")
+            isStarting = false
         }
     }
 
@@ -88,11 +102,13 @@ final class MicLevelMonitor: ObservableObject {
         do {
             try engine.start()
             isRunning = true
+            isStarting = false
             lastStatusMessage = "running @ \(Int(format.sampleRate))Hz / \(format.channelCount)ch"
             Logger.shared.log("engine.start SUCCESS — tap installed on bus 0")
         } catch {
             lastStatusMessage = "engine.start failed: \(error.localizedDescription)"
             isRunning = false
+            isStarting = false
             Logger.shared.log("engine.start FAILED: \(error)")
         }
     }
