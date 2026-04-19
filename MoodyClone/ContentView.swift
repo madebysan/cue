@@ -208,9 +208,13 @@ struct ContentView: View {
                 tickCountdown()
             } else {
                 withAnimation(.easeInOut(duration: 0.25)) { countdown = nil }
-                // Always start scroll; voice mode modulates pause-on-silence below.
-                scroll.start()
-                if voiceMode { voiceRunActive = true }
+                if voiceMode {
+                    // Voice-gated: scroll only advances when mic level > threshold.
+                    // handleVoiceLevel starts/stops scroll based on mic input.
+                    voiceRunActive = true
+                } else {
+                    scroll.start()
+                }
             }
         }
     }
