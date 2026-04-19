@@ -17,7 +17,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.isMovableByWindowBackground = true
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
-        panel.sharingType = .none
+        // Invisible to screen share / screenshots — Moody's signature privacy feature.
+        // `--qa-visible` launch arg disables this for visual QA builds only.
+        let qaVisible = CommandLine.arguments.contains("--qa-visible")
+        panel.sharingType = qaVisible ? .readOnly : .none
         panel.hidesOnDeactivate = false
 
         panel.contentView = NSHostingView(rootView: ContentView())
