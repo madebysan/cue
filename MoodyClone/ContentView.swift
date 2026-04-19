@@ -238,14 +238,15 @@ struct ContentView: View {
     }
 
     private func hookUpMicToSpeech() {
-        // Route mic audio into speech recognizer.
-        mic.onAudioBuffer = { [weak speech] buffer, _ in
-            speech?.append(buffer: buffer)
+        let speechRef = speech
+        let matcherRef = matcher
+        mic.onAudioBuffer = { buffer, _ in
+            speechRef.append(buffer: buffer)
         }
-        // Route recognized text to the matcher.
-        speech.onRecognized = { [weak matcher] text in
-            matcher?.ingest(text)
+        speech.onRecognized = { text in
+            matcherRef.ingest(text)
         }
+        Logger.shared.log("hookUpMicToSpeech — mic.onAudioBuffer set=\(mic.onAudioBuffer != nil), speech.onRecognized set=\(speech.onRecognized != nil)")
     }
 
     private func manualScroll(by delta: CGFloat) {

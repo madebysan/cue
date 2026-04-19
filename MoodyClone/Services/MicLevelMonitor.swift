@@ -89,14 +89,22 @@ final class MicLevelMonitor: ObservableObject {
         input.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, time in
             guard let self else { return }
             // Forward the raw buffer to any subscriber (e.g. SpeechTranscriber) before we process.
-            self.onAudioBuffer?(buffer, time)
+            let cb = self.onAudioBuffer
+            cb?(buffer, time)
 
             let raw = Self.rms(buffer: buffer)
             let scaled = min(1.0, max(0.0, raw * 15))
+            // Log the first tap + subscriber presence so we can prove audio is flowing.
             DispatchQueue.main.async {
+                if self.tapCallCount == 0 {
+                    Logger.shared.log("FIRST TAP — frames=\(buffer.frameLength), raw=\(String(format: "%.5f", raw)), subscriber set=\(cb != nil)")
+                }
                 self.tapCallCount += 1
                 self.lastRawRMS = raw
                 self.level = scaled
+                if self.tapCallCount % 120 == 0 {
+                    Logger.shared.log("tap #\(self.tapCallCount) raw=\(String(format: "%.5f", raw)) subscriber=\(cb != nil)")
+                }
             }
         }
 
