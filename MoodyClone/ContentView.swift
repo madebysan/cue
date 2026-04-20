@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 struct ContentView: View {
-    @AppStorage("defaultTextSize") private var textSize: Double = 24
+    @AppStorage("defaultTextSize") private var textSize: Double = 18
 
     @State private var script: String = """
     Welcome to MoodyClone, a teleprompter that listens to you instead of running on a timer. Start by pressing the spacebar or clicking the play button. A three-two-one countdown will appear, and then the app will begin listening. As you speak, the text will scroll to keep your current position visible. You do not need to match the speed to your reading pace. Just talk normally. The app will follow.
@@ -171,6 +171,11 @@ struct ContentView: View {
     }
 
     private func resetProgress() {
+        // Defensive: stop any in-flight speech/scroll first so we don't reset
+        // position while an update is mid-flight (can confuse SwiftUI layout).
+        Logger.shared.log("resetProgress")
+        stopRunning()
+        withAnimation(.easeInOut(duration: 0.2)) { countdown = nil }
         matcher.reset()
     }
 

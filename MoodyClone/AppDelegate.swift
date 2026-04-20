@@ -19,11 +19,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
-        let windowSize = NSSize(width: 640, height: 140)
-        let initialOrigin = Self.topCenterOrigin(for: windowSize)
+        let defaultSize = NSSize(width: 500, height: 110)
+        let initialOrigin = Self.topCenterOrigin(for: defaultSize)
 
         let panel = NSPanel(
-            contentRect: NSRect(origin: initialOrigin, size: windowSize),
+            contentRect: NSRect(origin: initialOrigin, size: defaultSize),
             styleMask: [.borderless, .resizable, .fullSizeContentView],
             backing: .buffered,
             defer: false
@@ -38,7 +38,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let qaVisible = CommandLine.arguments.contains("--qa-visible")
         panel.sharingType = qaVisible ? .readOnly : .none
         panel.hidesOnDeactivate = false
-        panel.minSize = NSSize(width: 420, height: 110)
+        panel.minSize = NSSize(width: 360, height: 90)
+        // Persist size + position between launches.
+        panel.setFrameAutosaveName("MoodyClonePanel")
 
         panel.contentView = NSHostingView(rootView: ContentView())
         panel.makeKeyAndOrderFront(nil)
