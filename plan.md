@@ -1,4 +1,41 @@
-# Moody Clone — v0-mac Plan
+# MoodyClone — Plan
+
+## Done this session (2026-04-19)
+- Scaffolded via `/v0-mac` skill: xcodegen project, sandbox entitlements, floating panel
+- Rewrote audio pipeline three times to find what works on macOS 26 — landed on `AVCaptureSession` + `CMSampleBuffer` directly to `SFSpeechRecognizer.appendAudioSampleBuffer`
+- Built full transcription-based teleprompter: `SpeechTranscriber` + `TranscriptionMatcher` + NSTextView-backed `TeleprompterView` with programmatic scroll-to-character-offset
+- Fuzzy matcher with Levenshtein similarity, rolling lookahead, never-backtracks guarantee
+- Unified UX: one play button controls everything (mic + speech + scroll), no more mic toggle
+- Notch-style compact floating UI (380×100 default, dark rounded-bottom panel)
+- Menu bar status item (sparkle icon — intentionally non-obvious)
+- Settings window: opacity slider, text size
+- File logger to `~/Desktop/moody-clone-log.txt` for debugging
+- Comprehensive `backlog.md` covering testing scenarios, v2 features, housekeeping
+
+## Current state
+- **Build:** passing (`xcodebuild -destination 'platform=macOS'` → BUILD SUCCEEDED)
+- **Runtime:** works end-to-end — mic captures, speech transcribes, matcher advances, text scrolls
+- **Known issue:** occasional crash on second play-press. No `.ips` crash report generated (suggests SwiftUI layout loop, not a trap). Last mitigation (CountdownView font 140→48, removed scale transition, added tracer logs) is deployed but not yet verified by the user.
+- **Sandbox:** currently OFF to let the logger write to Desktop. Must re-enable before shipping.
+
+## Next steps
+- [ ] **Verify crash fix** — press play twice in a row, read log to see where it stops. If CountdownView was the culprit, the tracer will prove it.
+- [ ] Long-session stress test (10+ min script) — watch memory and CPU
+- [ ] Record a real self-recorded video with teleprompter in front of camera, evaluate the recording
+- [ ] Test coexistence with Zoom/Meet (mic sharing + full-screen-share invisibility)
+- [ ] Re-enable sandbox + move logger path (or disable logger in release builds)
+- [ ] Remove `--qa-visible` debug flag before shipping
+- [ ] Design + add an app icon
+
+## Decisions & context
+- **Audio:** AVAudioEngine was abandoned on macOS 26 because its input tap silently never fires with AirPods / certain mic configurations. AVCaptureSession is the only reliable path. It also is non-exclusive so it coexists with Zoom/Meet. See `~/.claude/decisions.md` under macOS for the full write-up.
+- **Concurrency:** removed all `@MainActor` annotations from service classes — they caused Button tap crashes on macOS 26 (`MainActor.assumeIsolated` → null deref inside `_ButtonGesture`). Per-thread updates use `DispatchQueue.main.async` instead.
+- **Matching:** chose rolling fuzzy lookahead over full alignment (Needleman-Wunsch etc.) because it tolerates improvisation and off-script talk without requiring the user to say the script verbatim.
+- **UX simplification:** killed the mic toggle per user request. Play starts everything; pause stops everything. Simpler mental model.
+
+---
+
+# Original v0-mac Plan (historical, for reference)
 
 ## Overview
 A floating teleprompter app for macOS. Paste a script, press spacebar, the text scrolls automatically. The window floats above every app, stays visible across Spaces and over full-screen apps, and is invisible to screen share and screenshots. Includes simple voice-activated scrolling: when you speak, it scrolls; when you pause, it pauses.
