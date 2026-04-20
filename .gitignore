@@ -13,8 +13,16 @@ DerivedData/
 .build/
 Package.resolved
 
-# v0-mac
-.v0-mac/screenshots/
-
 # xcodegen — generated project (keep project.yml in repo)
 MoodyClone.xcodeproj/
+
+# v0-mac session artifacts — not meant for a public repo
+.v0-mac/
+
+# Local tracking files — kept locally, not published
+# (remove these lines if publishing plan/backlog openly in the repo)
+plan.md
+plan-dumb.md
+backlog.md
+checkpoint.json
+BUILD_REPORT.md

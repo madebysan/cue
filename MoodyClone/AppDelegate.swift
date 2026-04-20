@@ -36,8 +36,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.isMovableByWindowBackground = true
         panel.isReleasedWhenClosed = false
+        #if DEBUG
         let qaVisible = CommandLine.arguments.contains("--qa-visible")
         panel.sharingType = qaVisible ? .readOnly : .none
+        #else
+        panel.sharingType = .none
+        #endif
         panel.hidesOnDeactivate = false
         panel.minSize = NSSize(width: 360, height: 90)
         // Persist size + position between launches.
