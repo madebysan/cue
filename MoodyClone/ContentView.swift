@@ -180,7 +180,9 @@ struct ContentView: View {
     }
 
     private func startWithCountdown() {
+        Logger.shared.log("startWithCountdown — setting countdown=3")
         countdown = 3
+        Logger.shared.log("countdown set, scheduling tick")
         tickCountdown()
     }
 
