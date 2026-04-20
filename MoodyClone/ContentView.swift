@@ -3,8 +3,6 @@ import SwiftUI
 
 struct ContentView: View {
     @AppStorage("defaultTextSize") private var textSize: Double = 24
-    @AppStorage("defaultVoiceMode") private var voiceMode: Bool = false
-    @AppStorage("fallbackSpeed") private var fallbackSpeed: Double = 60  // used when voice mode is off
 
     @State private var script: String = """
     Welcome to MoodyClone, a teleprompter that listens to you instead of running on a timer. Start by pressing the spacebar or clicking the play button. A three-two-one countdown will appear, and then the app will begin listening. As you speak, the text will scroll to keep your current position visible. You do not need to match the speed to your reading pace. Just talk normally. The app will follow.
@@ -39,7 +37,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             controlBar
-            if voiceMode {
+            if isRunning {
                 progressBar
                     .padding(.horizontal, 12)
                     .padding(.top, 4)
@@ -72,34 +70,9 @@ struct ContentView: View {
             AppDelegate.onArrowUp = { manualScroll(by: -80) }
             AppDelegate.onArrowDown = { manualScroll(by: 80) }
             AppDelegate.isEditorFocused = { editorFocused }
-
-            // If voiceMode was on from a prior session, actually start the mic now.
-            // @AppStorage remembers the toggle state but .onChange only fires on change.
-            if voiceMode {
-                Logger.shared.log("voiceMode=true at launch — starting mic")
-                speech.requestAuthorization { _ in mic.start() }
-            }
         }
         .onChange(of: editorFocused) { _, f in
             AppDelegate.isEditorFocused = { f }
-        }
-        .onChange(of: voiceMode) { _, on in
-            Logger.shared.log("voiceMode changed to \(on)")
-            if on {
-                speech.requestAuthorization { _ in
-                    mic.start()
-                    // If the user was already playing when they toggled mic off, restart speech now.
-                    if isRunning {
-                        Logger.shared.log("restarting speech after mic re-enable (was isRunning)")
-                        speech.start()
-                    }
-                }
-            } else {
-                // Turning mic off stops everything — there's nothing for play to do without audio.
-                speech.stop()
-                mic.stop()
-                stopRunning()
-            }
         }
     }
 
@@ -125,27 +98,9 @@ struct ContentView: View {
                 Image(systemName: "textformat.size")
                     .imageScale(.small)
                     .foregroundStyle(.secondary)
-                Slider(value: $textSize, in: 14...48).frame(width: 100)
+                Slider(value: $textSize, in: 14...48).frame(width: 140)
             }
             .help("Text size")
-
-            if !voiceMode {
-                HStack(spacing: 6) {
-                    Image(systemName: "hare.fill")
-                        .imageScale(.small)
-                        .foregroundStyle(.secondary)
-                    Slider(value: $fallbackSpeed, in: 20...200).frame(width: 100)
-                }
-                .help("Fallback scroll speed (voice mode off)")
-            }
-
-            Divider().frame(height: 16)
-
-            Toggle(isOn: $voiceMode) {
-                Image(systemName: voiceMode ? "mic.fill" : "mic.slash.fill")
-            }
-            .toggleStyle(.button)
-            .help(voiceMode ? "Voice-following on — app listens and scrolls to your position" : "Voice-following off — manual scrolling only")
 
             Spacer()
         }
@@ -193,15 +148,15 @@ struct ContentView: View {
     }
 
     private var focusOffset: Int? {
-        // Scroll to the current matched position in voice mode; otherwise let the user control.
-        guard voiceMode, isRunning, !editorFocused else { return nil }
+        // Scroll to the current matched position while running; otherwise let the user control.
+        guard isRunning, !editorFocused else { return nil }
         return matcher.currentCharOffset
     }
 
     // MARK: - Actions
 
     private func togglePlay() {
-        Logger.shared.log("togglePlay — voiceMode=\(voiceMode) isRunning=\(isRunning) micRunning=\(mic.isRunning) countdown=\(countdown.map(String.init) ?? "nil") editorFocused=\(editorFocused)")
+        Logger.shared.log("togglePlay — isRunning=\(isRunning) micRunning=\(mic.isRunning) countdown=\(countdown.map(String.init) ?? "nil") editorFocused=\(editorFocused)")
         if countdown != nil {
             withAnimation(.easeInOut(duration: 0.2)) { countdown = nil }
             return
@@ -210,9 +165,8 @@ struct ContentView: View {
             stopRunning()
             return
         }
-        // If voice mode is on but mic isn't running yet (e.g. first launch), start it now.
-        if voiceMode && !mic.isRunning {
-            Logger.shared.log("play pressed but mic not running — starting mic first")
+        // Make sure the mic is ready before the countdown ends.
+        if !mic.isRunning {
             speech.requestAuthorization { _ in mic.start() }
         }
         startWithCountdown()
@@ -247,10 +201,8 @@ struct ContentView: View {
 
     private func beginRunning() {
         isRunning = true
-        if voiceMode {
-            speech.start()
-        }
-        Logger.shared.log("beginRunning — voiceMode=\(voiceMode)")
+        speech.start()
+        Logger.shared.log("beginRunning")
     }
 
     private func stopRunning() {
@@ -259,6 +211,8 @@ struct ContentView: View {
         }
         isRunning = false
         speech.stop()
+        // Keep mic running between sessions so the orange dot stays consistent
+        // and play→speech starts instantly. User quitting the app stops it.
     }
 
     private func hookUpMicToSpeech() {
