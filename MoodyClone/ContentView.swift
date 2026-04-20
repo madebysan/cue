@@ -37,14 +37,7 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             controlBar
-            if isRunning {
-                progressBar
-                    .padding(.horizontal, 12)
-                    .padding(.top, 4)
-                    .padding(.bottom, 8)
-            }
-
-            ZStack {
+            ZStack(alignment: .top) {
                 TeleprompterView(
                     text: $script,
                     fontSize: textSize,
@@ -60,8 +53,19 @@ struct ContentView: View {
                 }
             }
         }
-        .frame(minWidth: 460, minHeight: 280)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(
+            // Notch-shape: sharp top corners (hugs the screen edge), rounded bottom.
+            UnevenRoundedRectangle(
+                cornerRadii: .init(topLeading: 0, bottomLeading: 18, bottomTrailing: 18, topTrailing: 0)
+            )
+            .fill(.black.opacity(0.92))
+        )
+        .clipShape(
+            UnevenRoundedRectangle(
+                cornerRadii: .init(topLeading: 0, bottomLeading: 18, bottomTrailing: 18, topTrailing: 0)
+            )
+        )
+        .preferredColorScheme(.dark)
         .onAppear {
             matcher.setScript(script)
             hookUpMicToSpeech()
@@ -79,62 +83,51 @@ struct ContentView: View {
     // MARK: - Controls
 
     private var controlBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             Button(action: togglePlay) {
-                Image(systemName: playSymbol).frame(width: 20)
+                Image(systemName: playSymbol)
+                    .font(.system(size: 12, weight: .semibold))
+                    .frame(width: 18, height: 18)
             }
             .buttonStyle(.borderless)
             .help(playHelp)
 
             Button(action: resetProgress) {
                 Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 11))
             }
             .buttonStyle(.borderless)
             .help("Reset to start")
 
-            Divider().frame(height: 16)
-
-            HStack(spacing: 6) {
-                Image(systemName: "textformat.size")
-                    .imageScale(.small)
+            if isRunning {
+                Text("\(matcher.currentWordIndex)/\(matcher.totalTokens)")
+                    .font(.caption2.monospacedDigit())
                     .foregroundStyle(.secondary)
-                Slider(value: $textSize, in: 14...48).frame(width: 140)
+            }
+
+            Divider().frame(height: 12)
+
+            HStack(spacing: 4) {
+                Image(systemName: "textformat.size")
+                    .font(.system(size: 10))
+                    .foregroundStyle(.secondary)
+                Slider(value: $textSize, in: 14...48).frame(width: 120)
             }
             .help("Text size")
 
             Spacer()
+
+            Button(action: { NSApp.terminate(nil) }) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.borderless)
+            .help("Close (⌘Q)")
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(.ultraThinMaterial)
-    }
-
-    private var progressBar: some View {
-        VStack(spacing: 4) {
-            VolumeMeterView(level: mic.level, threshold: 0.05, active: isRunning)
-            HStack {
-                Text("\(matcher.currentWordIndex) / \(matcher.totalTokens) words")
-                Spacer()
-                Text(speechStatus)
-            }
-            .font(.caption2.monospacedDigit())
-            .foregroundStyle(.tertiary)
-            if let err = speech.lastError {
-                Text(err)
-                    .font(.caption2)
-                    .foregroundStyle(.red)
-            }
-        }
-    }
-
-    private var speechStatus: String {
-        switch speech.authStatus {
-        case .authorized: return speech.isRunning ? "listening" : "speech idle"
-        case .denied: return "speech denied"
-        case .restricted: return "speech restricted"
-        case .notDetermined: return "speech —"
-        @unknown default: return "speech ?"
-        }
+        .padding(.top, 6)
+        .padding(.bottom, 4)
     }
 
     private var playSymbol: String {
