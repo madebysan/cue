@@ -52,6 +52,10 @@ struct ContentView: View {
                 if let count = countdown, count > 0 {
                     CountdownView(value: count)
                 }
+
+                if mic.permissionDenied || speech.authStatus == .denied {
+                    permissionHint
+                }
             }
         }
         .background(
@@ -128,6 +132,21 @@ struct ContentView: View {
         .padding(.horizontal, 12)
         .padding(.top, 6)
         .padding(.bottom, 4)
+    }
+
+    private var permissionHint: some View {
+        VStack(spacing: 6) {
+            Image(systemName: "mic.slash.fill").font(.title2)
+            Text(mic.permissionDenied ? "Microphone access denied" : "Speech recognition denied")
+                .font(.callout.weight(.semibold))
+            Text("Enable in System Settings → Privacy & Security → \(mic.permissionDenied ? "Microphone" : "Speech Recognition"), then relaunch.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color.black.opacity(0.7))
     }
 
     private var playSymbol: String {

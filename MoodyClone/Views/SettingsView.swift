@@ -9,7 +9,9 @@ struct SettingsView: View {
             Section("Appearance") {
                 LabeledContent("Background opacity") {
                     HStack {
-                        Slider(value: $backgroundOpacity, in: 0.3...1.0).frame(width: 200)
+                        // Floor at 0.5 — below this, text-on-background contrast falls off a cliff
+                        // and the teleprompter becomes unreadable.
+                        Slider(value: $backgroundOpacity, in: 0.5...1.0).frame(width: 200)
                         Text(String(format: "%.0f%%", backgroundOpacity * 100))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
