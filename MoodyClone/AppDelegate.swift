@@ -4,6 +4,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var panel: NSPanel?
     var keyMonitor: Any?
+    var statusItem: NSStatusItem?
 
     static var onSpacePressed: () -> Void = {}
     static var onEscapePressed: () -> Void = {}
@@ -19,7 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
-        let defaultSize = NSSize(width: 420, height: 110)
+        let defaultSize = NSSize(width: 380, height: 100)
         let initialOrigin = Self.topCenterOrigin(for: defaultSize)
 
         let panel = NSPanel(
@@ -69,6 +70,35 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
         Logger.shared.log("key monitor installed")
+
+        // Discreet menu bar icon so the user can confirm the app is running
+        // and toggle window visibility. Intentionally not a microphone or quote icon.
+        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = item.button {
+            button.image = NSImage(systemSymbolName: "sparkle", accessibilityDescription: "MoodyClone")
+        }
+        let menu = NSMenu()
+        menu.addItem(NSMenuItem(title: "Show/Hide Window", action: #selector(toggleWindow), keyEquivalent: "h"))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Settings…", action: #selector(openSettings), keyEquivalent: ","))
+        menu.addItem(NSMenuItem.separator())
+        menu.addItem(NSMenuItem(title: "Quit", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
+        item.menu = menu
+        statusItem = item
+    }
+
+    @objc private func toggleWindow() {
+        guard let panel else { return }
+        if panel.isVisible {
+            panel.orderOut(nil)
+        } else {
+            panel.makeKeyAndOrderFront(nil)
+        }
+    }
+
+    @objc private func openSettings() {
+        // Triggers SwiftUI's Settings scene via the standard app menu item.
+        NSApp.sendAction(Selector(("showSettingsWindow:")), to: nil, from: nil)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {

@@ -7,13 +7,15 @@ import Foundation
 /// macOS 26 (especially with AirPods / Bluetooth mics) — AVCaptureSession
 /// consistently fires and plays well with SFSpeechRecognizer.
 final class MicLevelMonitor: NSObject, ObservableObject, AVCaptureAudioDataOutputSampleBufferDelegate {
-    @Published var level: Float = 0
+    // Only observed fields are @Published. Per-sample values (level, sampleCount)
+    // are plain vars so they don't trigger ContentView re-renders 60x/sec.
     @Published var isRunning: Bool = false
     @Published var permissionDenied: Bool = false
 
-    @Published var sampleCount: Int = 0
-    @Published var lastRawRMS: Float = 0
-    @Published var lastStatusMessage: String = "not started"
+    var level: Float = 0
+    var sampleCount: Int = 0
+    var lastRawRMS: Float = 0
+    var lastStatusMessage: String = "not started"
 
     /// Forward each captured audio sample buffer to subscribers (e.g. SpeechTranscriber).
     /// Invoked on the capture queue (not main).
