@@ -1,4 +1,4 @@
-name: MoodyClone
+name: Cue
 options:
   bundleIdPrefix: com.san
   deploymentTarget:
@@ -20,18 +20,18 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
 
 targets:
-  MoodyClone:
+  Cue:
     type: application
     platform: macOS
     sources:
-      - path: MoodyClone
+      - path: Cue
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.san.MoodyClone
-        CODE_SIGN_ENTITLEMENTS: MoodyClone/MoodyClone.entitlements
-        INFOPLIST_KEY_CFBundleDisplayName: MoodyClone
+        PRODUCT_BUNDLE_IDENTIFIER: com.san.Cue
+        CODE_SIGN_ENTITLEMENTS: Cue/Cue.entitlements
+        INFOPLIST_KEY_CFBundleDisplayName: Cue
         INFOPLIST_KEY_NSHumanReadableCopyright: "Made by santiagoalonso.com"
-        INFOPLIST_KEY_NSMicrophoneUsageDescription: "MoodyClone listens to your voice to auto-scroll the teleprompter."
-        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "MoodyClone transcribes what you read so it can scroll the teleprompter to your exact position in the script."
+        INFOPLIST_KEY_NSMicrophoneUsageDescription: "Cue listens to your voice to auto-scroll the teleprompter and help you rehearse."
+        INFOPLIST_KEY_NSSpeechRecognitionUsageDescription: "Cue transcribes what you read so it can scroll the teleprompter to your exact position in the script."
         INFOPLIST_KEY_LSMinimumSystemVersion: "14.0"
         INFOPLIST_KEY_NSPrincipalClass: NSApplication

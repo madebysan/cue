@@ -1,4 +1,4 @@
-# MoodyClone — Plan
+# Cue — Plan
 
 ## Done this session (2026-04-19)
 - Scaffolded via `/v0-mac` skill: xcodegen project, sandbox entitlements, floating panel
@@ -9,23 +9,29 @@
 - Notch-style compact floating UI (380×100 default, dark rounded-bottom panel)
 - Menu bar status item (sparkle icon — intentionally non-obvious)
 - Settings window: opacity slider, text size
-- File logger to `~/Desktop/moody-clone-log.txt` for debugging
+- File logger to `~/Desktop/cue-log.txt` for debugging
 - Comprehensive `backlog.md` covering testing scenarios, v2 features, housekeeping
 
+## Done this session (2026-04-20)
+- Ran `/ship-checklist` audit — all code-side FAIL items knocked out: LICENSE (MIT), README footer standard format, sandbox re-enabled, logger moved to `~/Library/Logs/Cue/app.log` and gated `#if DEBUG`, `--qa-visible` flag gated `#if DEBUG`, `.gitignore` extended.
+- Deleted dead code: `ScrollController.swift`, `VolumeMeterView.swift`, `SpeechTranscriber.append(buffer: AVAudioPCMBuffer)`.
+- Floored opacity slider at 0.5 (below was unreadable).
+- Added inline UI hint when mic or speech permission is denied.
+- **Renamed the app MoodyClone → Cue.** Bundle ID now `com.san.Cue`. Tagline: "Practice on Cue." Full rename covers Swift source, project.yml, entitlements, README, wiki, CHANGELOG, backlog.
+
 ## Current state
-- **Build:** passing (`xcodebuild -destination 'platform=macOS'` → BUILD SUCCEEDED)
-- **Runtime:** works end-to-end — mic captures, speech transcribes, matcher advances, text scrolls
-- **Known issue:** occasional crash on second play-press. No `.ips` crash report generated (suggests SwiftUI layout loop, not a trap). Last mitigation (CountdownView font 140→48, removed scale transition, added tracer logs) is deployed but not yet verified by the user.
-- **Sandbox:** currently OFF to let the logger write to Desktop. Must re-enable before shipping.
+- **Build:** Debug + Release both pass. Entitlements verified via `codesign -d`.
+- **Runtime:** works end-to-end — mic captures, speech transcribes, matcher advances, text scrolls.
+- **Known issue:** crash on second play-press reported on 2026-04-19. Mitigations deployed (CountdownView font 140→48, direct `setBoundsOrigin` no animator, `lastScrolledOffset` guard, perm-denied hint, cleaned dead code). **Still not user-verified.**
 
 ## Next steps
-- [ ] **Verify crash fix** — press play twice in a row, read log to see where it stops. If CountdownView was the culprit, the tracer will prove it.
-- [ ] Long-session stress test (10+ min script) — watch memory and CPU
-- [ ] Record a real self-recorded video with teleprompter in front of camera, evaluate the recording
-- [ ] Test coexistence with Zoom/Meet (mic sharing + full-screen-share invisibility)
-- [ ] Re-enable sandbox + move logger path (or disable logger in release builds)
-- [ ] Remove `--qa-visible` debug flag before shipping
-- [ ] Design + add an app icon
+- [ ] **Verify crash fix** — press play twice in a row; log tracer will pinpoint any remaining bomb.
+- [ ] **Accept Apple Developer agreement** at developer.apple.com/account (HTTP 403 blocks notarization).
+- [ ] **App icon** — need reference image or final design for `Assets.xcassets`.
+- [ ] Long-session stress test (10+ min script) — watch memory and CPU.
+- [ ] Record a real self-recorded video with teleprompter in front of camera, evaluate.
+- [ ] Test coexistence with Zoom/Meet (mic sharing + full-screen-share invisibility).
+- [ ] Rename project directory `~/Projects/moody-clone/` → `~/Projects/cue/` (deferred — mechanical but breaks my cwd mid-session).
 
 ## Decisions & context
 - **Audio:** AVAudioEngine was abandoned on macOS 26 because its input tap silently never fires with AirPods / certain mic configurations. AVCaptureSession is the only reliable path. It also is non-exclusive so it coexists with Zoom/Meet. See `~/.claude/decisions.md` under macOS for the full write-up.
@@ -88,10 +94,10 @@ panel.sharingType = .none   // invisible in screen share
 
 ## File structure
 ```
-moody-clone/
+cue/
 ├── project.yml
-├── MoodyClone/
-│   ├── MoodyCloneApp.swift           # @main
+├── Cue/
+│   ├── CueApp.swift           # @main
 │   ├── AppDelegate.swift             # NSPanel setup
 │   ├── ContentView.swift             # MainPanel layout
 │   ├── Models/
@@ -103,8 +109,8 @@ moody-clone/
 │       ├── VolumeMeterView.swift
 │       ├── CountdownView.swift
 │       └── SettingsView.swift
-├── MoodyClone/Info.plist
-└── MoodyClone/MoodyClone.entitlements
+├── Cue/Info.plist
+└── Cue/Cue.entitlements
 ```
 
 ## Implementation order

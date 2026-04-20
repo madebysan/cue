@@ -1,4 +1,4 @@
-# Moody Clone — /dumb Plan
+# Cue — /dumb Plan (historical)
 
 ## What it actually is
 A floating window with scrolling text. Press spacebar to start, press spacebar to pause. That's the product.
@@ -52,13 +52,13 @@ That's it. **No microphone entitlement.** No privacy string. No permission promp
 
 ## Files
 ```
-moody-clone/
+cue/
 ├── project.yml
-├── MoodyClone/
-│   ├── MoodyCloneApp.swift      # @main + AppDelegate
+├── Cue/
+│   ├── CueApp.swift      # @main + AppDelegate
 │   └── ContentView.swift         # everything else
-├── MoodyClone/Info.plist
-└── MoodyClone/MoodyClone.entitlements
+├── Cue/Info.plist
+└── Cue/Cue.entitlements
 ```
 **Three Swift files, including the @main.** That's the whole app.
 

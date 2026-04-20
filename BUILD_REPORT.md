@@ -1,4 +1,4 @@
-# MoodyClone — v0 Build Report
+# Cue — v0 Build Report
 
 **Built:** 2026-04-19T18:18:00Z
 **Iterations:** 1 (one ralph-loop turn)
@@ -27,27 +27,27 @@ All 11 features from plan.md ship in v0. No deferrals.
 ## How to Run It
 
 ```bash
-cd /Users/san/Projects/moody-clone
+cd /Users/san/Projects/cue
 
 # Regenerate project (only after editing project.yml)
 /opt/homebrew/bin/xcodegen generate
 
 # Build
 xcodebuild \
-  -project MoodyClone.xcodeproj \
-  -scheme MoodyClone \
+  -project Cue.xcodeproj \
+  -scheme Cue \
   -destination 'platform=macOS' \
   build
 
 # Launch normally (invisible to screen share)
-APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "MoodyClone.app" -path "*Debug*" | head -1)
+APP_PATH=$(find ~/Library/Developer/Xcode/DerivedData -name "Cue.app" -path "*Debug*" | head -1)
 open "$APP_PATH"
 
 # Launch with diagnostic visibility (for screenshotting the window)
-"$APP_PATH/Contents/MacOS/MoodyClone" --qa-visible
+"$APP_PATH/Contents/MacOS/Cue" --qa-visible
 
 # Or open in Xcode
-open MoodyClone.xcodeproj
+open Cue.xcodeproj
 # Then press ⌘R
 ```
 
@@ -63,18 +63,18 @@ open MoodyClone.xcodeproj
 ## File Structure
 
 ```
-moody-clone/
+cue/
 ├── project.yml                                  (xcodegen config)
 ├── plan.md, plan-dumb.md, BUILD_REPORT.md
 ├── checkpoint.json
 ├── .v0-mac/
 │   ├── prompt.md                                (full ralph-loop task brief)
 │   └── screenshots/                             (pass-1, final.png)
-└── MoodyClone/
-    ├── MoodyCloneApp.swift                      (@main, About panel)
+└── Cue/
+    ├── CueApp.swift                      (@main, About panel)
     ├── AppDelegate.swift                        (NSPanel config)
     ├── ContentView.swift                        (main teleprompter view)
-    ├── MoodyClone.entitlements
+    ├── Cue.entitlements
     ├── Services/
     │   ├── MicLevelMonitor.swift                (AVAudioEngine + RMS)
     │   └── ScrollController.swift               (Timer-based scroll offset)
@@ -93,7 +93,7 @@ moody-clone/
 **Issues deferred to polish:** 0
 
 Screenshots at `.v0-mac/screenshots/`:
-- `pass-1/phase3-launch.png` — full screen during launch (MoodyClone's signature invisibility means the window itself doesn't appear in screen capture — this is the feature working, not a failure)
+- `pass-1/phase3-launch.png` — full screen during launch (Cue's signature invisibility means the window itself doesn't appear in screen capture — this is the feature working, not a failure)
 - `pass-1/phase4-qa-visible.png` — launched with `--qa-visible` so the panel is screen-capturable
 - `pass-1/window-focused.png` — window-only crop showing control bar and script area
 - `final.png` — final state, window-only
@@ -110,7 +110,7 @@ Screenshots at `.v0-mac/screenshots/`:
 
 - **Voice permission prompt** fires the first time you toggle the microphone on. macOS 14+ routes this through the system sheet. If you deny, `MicLevelMonitor.permissionDenied` is set but there's no UI surfacing yet — v1 could add a hint explaining how to re-enable in System Settings.
 - **Large scripts (>5,000 words)** may stutter on the scroll — the whole document is offset in SwiftUI instead of using a paginated approach. Fine for typical teleprompter use (1-2 min scripts). A scroll-view anchor approach would be a v1 improvement.
-- **Esc exits full-screen** on macOS before the app's Esc handler runs if MoodyClone happens to be over a full-screen app — the panel's `.fullScreenAuxiliary` behavior interacts with native full-screen. Spacebar is the reliable toggle.
+- **Esc exits full-screen** on macOS before the app's Esc handler runs if Cue happens to be over a full-screen app — the panel's `.fullScreenAuxiliary` behavior interacts with native full-screen. Spacebar is the reliable toggle.
 
 ## Next Steps — Recommended
 
@@ -135,7 +135,7 @@ Screenshots at `.v0-mac/screenshots/`:
 
 - Total Swift files: 8
 - Lines of Swift: 541
-- Final clean build: **BUILD SUCCEEDED** (no errors, no warnings in MoodyClone target)
+- Final clean build: **BUILD SUCCEEDED** (no errors, no warnings in Cue target)
 - Build configuration: Debug, ad-hoc signed (CODE_SIGN_IDENTITY `-`)
 
 ---
