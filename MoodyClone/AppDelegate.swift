@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.regular)
         NSApp.activate(ignoringOtherApps: true)
 
-        let defaultSize = NSSize(width: 500, height: 110)
+        let defaultSize = NSSize(width: 420, height: 110)
         let initialOrigin = Self.topCenterOrigin(for: defaultSize)
 
         let panel = NSPanel(

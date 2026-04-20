@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @AppStorage("defaultTextSize") private var textSize: Double = 18
+    @AppStorage("backgroundOpacity") private var backgroundOpacity: Double = 0.92
 
     @State private var script: String = """
     Welcome to MoodyClone, a teleprompter that listens to you instead of running on a timer. Start by pressing the spacebar or clicking the play button. A three-two-one countdown will appear, and then the app will begin listening. As you speak, the text will scroll to keep your current position visible. You do not need to match the speed to your reading pace. Just talk normally. The app will follow.
@@ -54,11 +55,10 @@ struct ContentView: View {
             }
         }
         .background(
-            // Notch-shape: sharp top corners (hugs the screen edge), rounded bottom.
             UnevenRoundedRectangle(
                 cornerRadii: .init(topLeading: 0, bottomLeading: 18, bottomTrailing: 18, topTrailing: 0)
             )
-            .fill(.black.opacity(0.92))
+            .fill(.black.opacity(backgroundOpacity))
         )
         .clipShape(
             UnevenRoundedRectangle(

@@ -1,57 +1,45 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @AppStorage("defaultSpeed") private var defaultSpeed: Double = 80
-    @AppStorage("defaultTextSize") private var defaultTextSize: Double = 24
-    @AppStorage("defaultVoiceMode") private var defaultVoiceMode: Bool = false
-    @AppStorage("voiceSensitivity") private var voiceSensitivity: Double = 0.15
+    @AppStorage("defaultTextSize") private var textSize: Double = 18
+    @AppStorage("backgroundOpacity") private var backgroundOpacity: Double = 0.92
 
     var body: some View {
         Form {
-            Section("Defaults") {
-                LabeledContent("Speed") {
+            Section("Appearance") {
+                LabeledContent("Background opacity") {
                     HStack {
-                        Slider(value: $defaultSpeed, in: 20...200)
-                            .frame(width: 180)
-                        Text("\(Int(defaultSpeed)) px/s")
+                        Slider(value: $backgroundOpacity, in: 0.3...1.0).frame(width: 200)
+                        Text(String(format: "%.0f%%", backgroundOpacity * 100))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
-                            .frame(width: 60, alignment: .trailing)
+                            .frame(width: 44, alignment: .trailing)
                     }
                 }
+                Text("Lower opacity makes the window more transparent — useful when placing it over a camera view.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
                 LabeledContent("Text size") {
                     HStack {
-                        Slider(value: $defaultTextSize, in: 14...48)
-                            .frame(width: 180)
-                        Text("\(Int(defaultTextSize)) pt")
+                        Slider(value: $textSize, in: 12...48).frame(width: 200)
+                        Text("\(Int(textSize)) pt")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
-                            .frame(width: 60, alignment: .trailing)
+                            .frame(width: 44, alignment: .trailing)
                     }
                 }
-
-                Toggle("Enable voice-activated scrolling by default", isOn: $defaultVoiceMode)
             }
 
-            Section("Voice sensitivity") {
-                LabeledContent("Threshold") {
-                    HStack {
-                        Slider(value: $voiceSensitivity, in: 0.05...0.5)
-                            .frame(width: 180)
-                        Text(String(format: "%.2f", voiceSensitivity))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 60, alignment: .trailing)
-                    }
-                }
-                Text("Higher = less sensitive (harder to trigger scroll in noisy rooms).")
-                    .font(.caption)
+            Section("Tips") {
+                Text("• Drag anywhere on the dark background to reposition the window.\n• Resize from the bottom-right corner; size is remembered between launches.\n• Spacebar starts/pauses. Escape pauses. Arrow keys nudge position manually.\n• Window is invisible to screen share by default.")
+                    .font(.callout)
                     .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 480, height: 340)
+        .frame(width: 460, height: 360)
     }
 }
 
