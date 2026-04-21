@@ -63,7 +63,7 @@ A small ✨ sparkle icon appears in the menu bar. Click for: Show/Hide Window, S
 
 ## Privacy
 
-By default, the window has `sharingType = .none` — it **will not appear** in screen recordings, screen shares (Zoom, Meet, Teams, OBS), or screenshots. This is the signature Moody feature. Toggling the `--qa-visible` launch argument disables this for diagnostic screenshots only.
+By default, the window has `sharingType = .none` — it **will not appear** in screen recordings, screen shares (Zoom, Meet, Teams, OBS), or screenshots. This is the signature feature of Cue. Toggling the `--qa-visible` launch argument disables this for diagnostic screenshots only.
 
 ```bash
 # Launch with the window VISIBLE to screen capture (diagnostic mode)

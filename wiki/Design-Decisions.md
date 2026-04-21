@@ -194,7 +194,7 @@ Removing `@MainActor` fixes the crash. We lose compile-time enforcement of main-
 
 ## DD-008: Notch-style window shape
 
-**Context:** The app needs to sit near the camera so the user's eyes appear to look at the lens. Moody's signature look is a window that appears to extend from the MacBook notch.
+**Context:** The app needs to sit near the camera so the user's eyes appear to look at the lens. The signature look is a window that appears to extend from the MacBook notch.
 
 **Decision:** Borderless `NSPanel` pinned to top-center of the screen, sharp top corners + rounded bottom corners, dark semi-transparent background. Default 380×100.
 
@@ -208,13 +208,13 @@ Removing `@MainActor` fixes the crash. We lose compile-time enforcement of main-
 
 **Alternatives considered:**
 
-- Full titled window with rounded corners — Moody's look isn't possible
+- Full titled window with rounded corners — the notch-extending look isn't possible
 - Fully transparent with no background — text is unreadable over camera feeds
 - Menu bar dropdown — too small for a teleprompter
 
 **Consequences:**
 
-- ✅ Matches the Moody aesthetic
+- ✅ Notch-extending aesthetic
 - ✅ Minimizes eye movement while reading
 - ⚠️ No traffic lights means no visible way to close — mitigated by an `✕` button in the control bar + Cmd+Q + menu bar Quit
 - ⚠️ Size is remembered, but on a different screen the position might end up off-screen — `setFrameAutosaveName` handles this on reconnect

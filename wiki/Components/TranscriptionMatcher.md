@@ -60,7 +60,7 @@ graph TD
 - **Forward-only.** `windowStart = currentWordIndex`. We never scan backwards in the script. This is what prevents the matcher from jumping to an earlier occurrence of a common word.
 - **Multi-word phrase needle** (default 3 words). Matching "the quick" against the lookahead is vastly more discriminating than matching "the" alone — common words don't cause false jumps.
 - **Per-word threshold AND average-phrase threshold.** A needle only matches if every word clears `minWordSimilarity = 0.65` AND the average clears `minPhraseSimilarity = 0.55`. One terrible word torpedoes the whole match even if the average would pass.
-- **Fuzzy, not exact.** Levenshtein edit distance normalized to a 0–1 similarity. Handles mispronunciations, minor misrecognitions ("mood" vs "moody" = similarity 0.8, still matches).
+- **Fuzzy, not exact.** Levenshtein edit distance normalized to a 0–1 similarity. Handles mispronunciations, minor misrecognitions ("speak" vs "speaks" = similarity 0.83, still matches).
 
 ### Similarity scoring
 

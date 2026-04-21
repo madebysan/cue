@@ -4,7 +4,7 @@
 
 A floating macOS teleprompter that listens while you rehearse. Apple's on-device speech recognition matches what you say to your script and auto-scrolls to keep your current position visible — pause, improvise, skip ahead, and it adapts. Rehearse out loud, then record eye-to-eye with the camera.
 
-Inspired by [Moody](https://moody.mjarosz.com/). Built for one-person video recording where hiring a teleprompter operator isn't realistic.
+Built for one-person video recording where hiring a teleprompter operator isn't realistic.
 
 ## Quick Links
 

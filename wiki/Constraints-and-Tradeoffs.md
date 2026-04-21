@@ -67,7 +67,7 @@ The borderless `NSPanel` has no close button from macOS. Closing requires:
 - Click the `✕` in the app's control bar
 - Right-click the menu bar sparkle → Quit
 
-First-time users may not immediately see how to close the window. This is a Moody-faithful design but worth revisiting.
+First-time users may not immediately see how to close the window — worth revisiting.
 
 ### No resize handles
 
