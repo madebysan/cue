@@ -15,6 +15,7 @@ Package.resolved
 
 # xcodegen — generated project (keep project.yml in repo)
 MoodyClone.xcodeproj/
+Cue.xcodeproj/
 
 # v0-mac session artifacts — not meant for a public repo
 .v0-mac/

@@ -19,19 +19,32 @@
 - Added inline UI hint when mic or speech permission is denied.
 - **Renamed the app MoodyClone → Cue.** Bundle ID now `com.san.Cue`. Tagline: "Practice on Cue." Full rename covers Swift source, project.yml, entitlements, README, wiki, CHANGELOG, backlog.
 
-## Current state
-- **Build:** Debug + Release both pass. Entitlements verified via `codesign -d`.
-- **Runtime:** works end-to-end — mic captures, speech transcribes, matcher advances, text scrolls.
-- **Known issue:** crash on second play-press reported on 2026-04-19. Mitigations deployed (CountdownView font 140→48, direct `setBoundsOrigin` no animator, `lastScrolledOffset` guard, perm-denied hint, cleaned dead code). **Still not user-verified.**
+## Done this session (2026-04-21)
+- **App icon** shipped — reference image → `AppIcon.icns` → `Assets.xcassets/AppIcon.appiconset`. Visible in About panel and Dock.
+- **Developer ID signed + notarized + stapled DMG** at `~/Desktop/Cue-0.1.0.dmg` (2.2 MB). Root cause of earlier HTTP 403 on notarytool was **not** the Developer agreement — it was the expired credit card on the Apple Online Store. Once that was cleared, notarization succeeded first try.
+- **Signing fix:** `codesign --force --deep --sign "Developer ID Application"` without `--entitlements` silently strips them. Now always passes `--entitlements Cue/Cue.entitlements --options runtime` so sandbox + mic capability survive.
+- **DMG volname clash:** prior "Cue" and "Install Cue" volumes left stale entries in `diskarbitrationd` → `hdiutil create` returned "Operation not permitted". Worked around with volname `Cue Installer`.
+- **Menu bar rethought** — replaced `NSStatusItem + NSMenu` (where weak `target:` made action dispatch unreliable) with SwiftUI `MenuBarExtra { ... }` + `@NSApplicationDelegateAdaptor`. Menu now exposes: Show/Hide, live Mic/Speech status, Request Permissions shortcut, Settings, Quit.
+- **Sudden-termination kill** — macOS was reaping Cue whenever focus bounced (e.g. a perm sheet) because a borderless NSPanel registered as "last window closed". Fix: `applicationShouldTerminateAfterLastWindowClosed = false` + `ProcessInfo.processInfo.disableSuddenTermination()`.
+- **File Logger survives Release** — during this debug phase the `#if DEBUG` gate was removed so installed DMG builds still write to `~/Library/Logs/Cue/app.log`. Re-gate after the permission mystery is resolved.
+- **About panel credit** — clickable "Made by santiagoalonso.com" link wired in `CommandGroup(replacing: .appInfo)`.
 
-## Next steps
-- [ ] **Verify crash fix** — press play twice in a row; log tracer will pinpoint any remaining bomb.
-- [ ] **Accept Apple Developer agreement** at developer.apple.com/account (HTTP 403 blocks notarization).
-- [ ] **App icon** — need reference image or final design for `Assets.xcassets`.
-- [ ] Long-session stress test (10+ min script) — watch memory and CPU.
-- [ ] Record a real self-recorded video with teleprompter in front of camera, evaluate.
-- [ ] Test coexistence with Zoom/Meet (mic sharing + full-screen-share invisibility).
-- [ ] Rename project directory `~/Projects/moody-clone/` → `~/Projects/cue/` (deferred — mechanical but breaks my cwd mid-session).
+## Current state
+- **Build:** Debug + Release both pass. Entitlements verified via `codesign -d` against the installed `.app`.
+- **Distribution:** signed + notarized + stapled DMG exists, installs to `/Applications/Cue.app`.
+- **Runtime:** app launches, menu bar appears, SwiftUI Button closures *do* fire (confirmed in `app.log`: `MenuBar → Mic tapped; status=0`).
+- **BLOCKER — permission prompt never appears.** Calling `AVCaptureDevice.requestAccess(for: .audio)` and `SFSpeechRecognizer.requestAuthorization(...)` from the MenuBarExtra Button closures runs the callback path but the macOS system permission dialog does not surface. Without granted permissions, the teleprompter core functionality (mic capture → speech → scroll) is dead. **This is the open problem the next session needs to solve.**
+
+## Next steps (post-restart diagnosis)
+- [ ] **Confirm TCC entry** — `tccutil reset Microphone com.san.Cue && tccutil reset SpeechRecognition com.san.Cue`, then quit + relaunch Cue from `/Applications`. A fresh TCC state should force the prompt.
+- [ ] **If still silent** — try requesting permissions from a regular `NSWindow`/panel context (e.g. auto-request on `applicationDidFinishLaunching` once) instead of from inside a SwiftUI MenuBarExtra Button closure. Suspicion: the menu-popup NSApplication activation state blocks TCC from showing a prompt.
+- [ ] **Inspect unified log while tapping** — `log stream --predicate 'subsystem == "com.apple.tcc"' --info` live while tapping the menu item to see if TCC registers the request at all.
+- [ ] **Check bundle identity** — `codesign -d --entitlements - /Applications/Cue.app` to confirm `com.apple.security.device.audio-input` is still present post-install (the DMG staple should not have stripped it, but verify).
+- [ ] **Fallback:** if MenuBarExtra closure context is genuinely incompatible with TCC prompts on macOS 26, move permission requests into `applicationDidFinishLaunching` (first-launch only), keep menu items as status indicators + "Open System Settings" deep links.
+- [ ] Long-session stress test (10+ min script) — deferred until permissions work.
+- [ ] Test coexistence with Zoom/Meet (mic sharing + full-screen-share invisibility) — deferred.
+- [ ] Rename project directory `~/Projects/moody-clone/` → `~/Projects/cue/` — still deferred.
+- [ ] Re-gate the Release file logger behind `#if DEBUG` after the permission issue is fixed.
 
 ## Decisions & context
 - **Audio:** AVAudioEngine was abandoned on macOS 26 because its input tap silently never fires with AirPods / certain mic configurations. AVCaptureSession is the only reliable path. It also is non-exclusive so it coexists with Zoom/Meet. See `~/.claude/decisions.md` under macOS for the full write-up.
