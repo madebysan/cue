@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="assets/app-icon.png" width="128" height="128" alt="Cue app icon">
-</p>
 <h1 align="center">Cue</h1>
 <p align="center">Floating macOS teleprompter.<br>
 Listens and auto-scrolls your script to match what you say.</p>
