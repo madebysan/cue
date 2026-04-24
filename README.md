@@ -9,6 +9,8 @@ Listens and auto-scrolls your script to match what you say.</p>
 
 ---
 
+![Cue floating above a desktop, showing a script with the listening indicator active](assets/screenshot.jpg)
+
 How hard can it be to build a teleprompter? It's basically scrolling text. I wanted to push it a bit more. What if the scrolling matched your voice cadence and speech? What if you start going off-rails and don't follow the script, will the teleprompter pause for you to regroup before continuing scrolling?
 
 It's useful when recording videos to camera: tutorials, talking heads, pitch recordings, product walkthroughs. Anything where you want to keep your eyes near the camera while also reading a prepared script.
