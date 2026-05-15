@@ -1,10 +1,19 @@
-<h1 align="center">Cue</h1>
-<p align="center">Floating macOS teleprompter.<br>
-Listens and auto-scrolls your script to match what you say.</p>
-<p align="center"><strong>Version 0.1.0</strong> · macOS 14+ · Apple Silicon & Intel</p>
-<p align="center"><a href="https://github.com/madebysan/cue/releases/latest"><strong>Download Cue</strong></a></p>
+<p><img src="assets/app-icon.png" width="128" height="128" alt="Cue app icon"></p>
 
----
+<h1>Cue</h1>
+
+<p>Floating macOS teleprompter.<br>
+Listens and auto-scrolls your script to match what you say.</p>
+
+<p><strong>Version 0.1.0</strong> · macOS 14+ · Apple Silicon & Intel</p>
+
+<p>
+  <img src="https://img.shields.io/badge/Swift-f05138" alt="Swift">
+  <img src="https://img.shields.io/badge/SwiftUI-0066cc" alt="SwiftUI">
+  <img src="https://img.shields.io/badge/macOS-000000" alt="macOS">
+</p>
+
+<p><a href="https://github.com/madebysan/cue/releases/latest">Download Cue</a></p>
 
 ![Cue floating above a desktop, showing a script with the listening indicator active](assets/screenshot.jpg)
 
